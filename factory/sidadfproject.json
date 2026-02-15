@@ -1,0 +1,9 @@
+{
+	"name": "sidadfproject",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "7308889d-eedb-46e2-bb1a-f009fc2c333f",
+		"tenantId": "82ace23f-dabd-4e35-a15e-38fd2947efab"
+	}
+}
