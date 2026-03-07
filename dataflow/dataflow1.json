@@ -1,0 +1,132 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_onprem",
+						"type": "DatasetReference"
+					},
+					"name": "Dimairline"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_flight",
+						"type": "DatasetReference"
+					},
+					"name": "Dimflight"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_passenger",
+						"type": "DatasetReference"
+					},
+					"name": "dimpassenger"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_booking",
+						"type": "DatasetReference"
+					},
+					"name": "Factbooking"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_json",
+						"type": "DatasetReference"
+					},
+					"name": "dimairport"
+				}
+			],
+			"sinks": [],
+			"transformations": [
+				{
+					"name": "derivedColumncountry"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "select2"
+				},
+				{
+					"name": "derivedgendermale"
+				},
+				{
+					"name": "derivedflagfemale"
+				},
+				{
+					"name": "filterage"
+				},
+				{
+					"name": "derivedname"
+				},
+				{
+					"name": "derivedColumnfname"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          airline_id as short,",
+				"          airline_name as string,",
+				"          country as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Dimairline",
+				"source(output(",
+				"          flight_id as short,",
+				"          flight_number as string,",
+				"          departure_time as string,",
+				"          arrival_time as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Dimflight",
+				"source(output(",
+				"          passenger_id as short,",
+				"          full_name as string,",
+				"          gender as string,",
+				"          age as short,",
+				"          country as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> dimpassenger",
+				"source(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'parquet') ~> Factbooking",
+				"source(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     documentForm: 'documentPerLine') ~> dimairport",
+				"Dimairline derive(country = upper(country)) ~> derivedColumncountry",
+				"Dimflight select(mapColumn(",
+				"          flight_id,",
+				"          flight_number,",
+				"          departure_timestamp = departure_time,",
+				"          arrival_timestamp = arrival_time",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"dimpassenger select(mapColumn(",
+				"          passenger_id,",
+				"          full_name,",
+				"          gender_flag = gender,",
+				"          age,",
+				"          country",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
+				"select2 derive(gender_flag = regexReplace(gender_flag, \"M\", \"Male\")) ~> derivedgendermale",
+				"derivedgendermale derive(gender_flag = regexReplace(gender_flag, \"F\", \"Female\")) ~> derivedflagfemale",
+				"derivedflagfemale filter(age > 25) ~> filterage",
+				"filterage derive(first_name = split(full_name, \" \")) ~> derivedname",
+				"derivedname derive(first_name = first_name[1]) ~> derivedColumnfname"
+			]
+		}
+	}
+}
